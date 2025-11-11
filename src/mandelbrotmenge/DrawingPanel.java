@@ -14,11 +14,7 @@ import java.util.stream.Collectors;
 import javax.swing.JPanel;
 
 /**
- * zeichenbarer Bereich = (0, 0) bis (width-2, height-2)
- * 
- * <br>https://theses.liacs.nl/pdf/2018-2019-JonckheereLSde.pdf
- * 
- * <br>https://de.wikipedia.org/wiki/Mandelbrot-Menge#Deep_Zoom
+ * zeichenbarer Bereich = (0, 0) bis (width-1, height-1)
  */
 public class DrawingPanel extends JPanel {
 	
@@ -152,8 +148,8 @@ public class DrawingPanel extends JPanel {
 		else {
 			int startI = 0;
 			int startJ = 0;
-			int breite = getWidth() -1;
-			int hoehe = getHeight() -1;
+			int breite = getWidth();
+			int hoehe = getHeight();
 			
 			if (xRichtung) {
 				if (wert > 0) {
@@ -329,8 +325,8 @@ public class DrawingPanel extends JPanel {
 	 * @param gr das Graphics-Objekt, in das gezeichnet werden soll
 	 */
 	private void teilkantenverfolgungMandelbrotmenge(Graphics gr) {
-		int breite = getWidth() -1;
-		int hoehe = getHeight() -1;
+		int breite = getWidth();
+		int hoehe = getHeight();
 		
 //		gr.setColor(Color.WHITE);
 //		gr.fillRect(0, 0, getWidth(), getHeight());

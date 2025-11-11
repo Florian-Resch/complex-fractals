@@ -49,7 +49,7 @@ public class Window {
 	private JTextField textFieldParameter;
 	private JCheckBox chckbxNewCheckBox;
 	
-	boolean gestartet = false;
+	boolean gestartet = true;
 	
 	/**
 	 * für Bewegen mit MouseMotionListener
@@ -86,11 +86,9 @@ public class Window {
 	 */
 	private void initialize() {
 		frame = new JFrame();
-		// frame.setBounds(50, 50, 1366, 967);//useable Area: 1350x900
-		// frame.setMinimumSize(new Dimension(1366, 967));
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		
-		drawingPanel = new DrawingPanel(/*1350, 900*/);
+		drawingPanel = new DrawingPanel();
 		drawingPanel.addMouseListener(new MouseAdapter() {
 			public void mouseReleased(MouseEvent e) {
 				drawingPanel.requestFocusInWindow();
@@ -153,41 +151,81 @@ public class Window {
 		actionMap.put("moveUp", new AbstractAction() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
+				if (!gestartet) return;
+				while (lock);
+				lock = true;
+				
 				drawingPanel.bewegen(new Point(0, -20));
 				lblFixpunkt.setText(drawingPanel.getFixpunkt() + "   ");
+				
+				lock = false;
 			}
 		});
 		actionMap.put("moveDown", new AbstractAction() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
+				if (!gestartet) return;
+				while (lock);
+				lock = true;
+
 				drawingPanel.bewegen(new Point(0, 20));
 				lblFixpunkt.setText(drawingPanel.getFixpunkt() + "   ");
+				
+				lock = false;
 			}
 		});
 		actionMap.put("moveLeft", new AbstractAction() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
+				if (!gestartet) return;
+				while (lock);
+				lock = true;
+				
 				drawingPanel.bewegen(new Point(-20, 0));
 				lblFixpunkt.setText(drawingPanel.getFixpunkt() + "   ");
+				
+				lock = false;
 			}
 		});
 		actionMap.put("moveRight", new AbstractAction() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
+				if (!gestartet) return;
+				while (lock);
+				lock = true;
+				
 				drawingPanel.bewegen(new Point(20, 0));
 				lblFixpunkt.setText(drawingPanel.getFixpunkt() + "   ");
+
+				lock = false;
 			}
 		});
 		actionMap.put("zoomIn", new AbstractAction() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
+				if (!gestartet) return;
+				while (lock);
+				lock = true;
+
 				drawingPanel.reinzoomen(new Point(drawingPanel.getWidth()/2, drawingPanel.getHeight()/2));
+
+				lblSkalierung.setText(drawingPanel.getSkalierung() + "   ");
+				lblFixpunkt.setText(drawingPanel.getFixpunkt() + "   ");
+				lock = false;
 			}
 		});
 		actionMap.put("zoomOut", new AbstractAction() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
+				if (!gestartet) return;
+				while (lock);
+				lock = true;
+				
 				drawingPanel.rauszoomen(new Point(drawingPanel.getWidth()/2, drawingPanel.getHeight()/2));
+
+				lblSkalierung.setText(drawingPanel.getSkalierung() + "   ");
+				lblFixpunkt.setText(drawingPanel.getFixpunkt() + "   ");
+				lock = false;
 			}
 		});
 
@@ -203,7 +241,7 @@ public class Window {
 			public void actionPerformed(ActionEvent e) {
 				while (lock);
 				lock = true;
-//				drawingPanel.reset();
+				drawingPanel.reset();
 				drawingPanel.setMandelbrotmenge(true);
 				drawingPanel.drawMandelbrotJuliamenge();
 				gestartet = true;
@@ -239,7 +277,41 @@ public class Window {
 		
 		lblFixpunkt = new JLabel(drawingPanel.getFixpunkt() + "   ");
 		menuBar.add(lblFixpunkt);
+
+		btnSpeichern = new JButton("Speichern");
+		btnSpeichern.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				Thread t = new Thread(new Runnable() {
+					public void run() {
+						BufferedImage bild = bildBerechnen();
+						if (speichern(bild, false)) {
+							System.out.println("Speichern erfolgreich");
+						}
+						else {
+							System.out.println("Speichern fehlgeschlagen");
+						}
+					}
+				});
+				t.run();
+			}
+		});
+		menuBar.add(btnSpeichern);
+
+		btnNeuladen = new JButton("Neuladen");
+		btnNeuladen.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				while (lock);
+				lock = true;
+				if (!gestartet) return;
+				drawingPanel.drawMandelbrotJuliamenge();
+				lock = false;
+			}
+		});
+		menuBar.add(btnNeuladen);
 		
+		lblIterationen = new JLabel(" Iterationen ");
+		menuBar.add(lblIterationen);
+
 		textFieldIterationen = new JTextField(drawingPanel.getMaxIterationen() + "");
 		textFieldIterationen.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -257,7 +329,11 @@ public class Window {
 			}
 		});
 		textFieldIterationen.setColumns(10);
+		menuBar.add(textFieldIterationen);
 		
+		lblParameter = new JLabel(" Parameter ");
+		menuBar.add(lblParameter);
+
 		textFieldParameter = new JTextField(drawingPanel.getParameter() + "");
 		textFieldParameter.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -277,45 +353,6 @@ public class Window {
 			}
 		});
 		textFieldParameter.setColumns(10);
-		
-		btnNeuladen = new JButton("Neuladen");
-		btnNeuladen.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				while (lock);
-				lock = true;
-				if (!gestartet) return;
-				drawingPanel.drawMandelbrotJuliamenge();
-				lock = false;
-			}
-		});
-		
-		btnSpeichern = new JButton("Speichern");
-		btnSpeichern.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				Thread t = new Thread(new Runnable() {
-					public void run() {
-						BufferedImage bild = bildBerechnen();
-						if (speichern(bild, false)) {
-							System.out.println("Speichern erfolgreich");
-						}
-						else {
-							System.out.println("Speichern fehlgeschlagen");
-						}
-					}
-				});
-				t.run();
-			}
-		});
-		
-		lblIterationen = new JLabel(" Iterationen ");
-		
-		lblParameter = new JLabel(" Parameter ");
-		
-		menuBar.add(btnSpeichern);
-		menuBar.add(btnNeuladen);
-		menuBar.add(lblIterationen);
-		menuBar.add(textFieldIterationen);
-		menuBar.add(lblParameter);
 		menuBar.add(textFieldParameter);
 		
 		chckbxNewCheckBox = new JCheckBox("Border tracing");
