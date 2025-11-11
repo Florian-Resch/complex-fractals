@@ -49,8 +49,6 @@ public class Window {
 	private JTextField textFieldParameter;
 	private JCheckBox chckbxNewCheckBox;
 	
-	boolean gestartet = true;
-	
 	/**
 	 * für Bewegen mit MouseMotionListener
 	 */
@@ -92,7 +90,6 @@ public class Window {
 		drawingPanel.addMouseListener(new MouseAdapter() {
 			public void mouseReleased(MouseEvent e) {
 				drawingPanel.requestFocusInWindow();
-				if (!gestartet) return;
 				while (lock);
 				lock = true;
 				startpunkt = null;
@@ -101,7 +98,6 @@ public class Window {
 		});
 		drawingPanel.addMouseMotionListener(new MouseMotionAdapter() {
 			public void mouseDragged(MouseEvent e) {
-				if (!gestartet) return;
 				while (lock);
 				lock = true;
 				if (startpunkt == null) {
@@ -119,7 +115,6 @@ public class Window {
 		});
 		drawingPanel.addMouseWheelListener(new MouseWheelListener() {
 			public void mouseWheelMoved(MouseWheelEvent e) {
-				if (!gestartet) return;
 				while (lock);
 				lock = true;
 				if (e.getWheelRotation() < 0) {
@@ -151,7 +146,6 @@ public class Window {
 		actionMap.put("moveUp", new AbstractAction() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				if (!gestartet) return;
 				while (lock);
 				lock = true;
 				
@@ -164,7 +158,6 @@ public class Window {
 		actionMap.put("moveDown", new AbstractAction() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				if (!gestartet) return;
 				while (lock);
 				lock = true;
 
@@ -177,7 +170,6 @@ public class Window {
 		actionMap.put("moveLeft", new AbstractAction() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				if (!gestartet) return;
 				while (lock);
 				lock = true;
 				
@@ -190,7 +182,6 @@ public class Window {
 		actionMap.put("moveRight", new AbstractAction() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				if (!gestartet) return;
 				while (lock);
 				lock = true;
 				
@@ -203,7 +194,6 @@ public class Window {
 		actionMap.put("zoomIn", new AbstractAction() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				if (!gestartet) return;
 				while (lock);
 				lock = true;
 
@@ -217,7 +207,6 @@ public class Window {
 		actionMap.put("zoomOut", new AbstractAction() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				if (!gestartet) return;
 				while (lock);
 				lock = true;
 				
@@ -244,7 +233,6 @@ public class Window {
 				drawingPanel.reset();
 				drawingPanel.setMandelbrotmenge(true);
 				drawingPanel.drawMandelbrotJuliamenge();
-				gestartet = true;
 				lock = false;
 			}
 		});
@@ -258,7 +246,6 @@ public class Window {
 				drawingPanel.reset();
 				drawingPanel.setMandelbrotmenge(false);
 				drawingPanel.drawMandelbrotJuliamenge();
-				gestartet = true;
 				lock = false;
 			}
 		});
@@ -302,7 +289,6 @@ public class Window {
 			public void actionPerformed(ActionEvent e) {
 				while (lock);
 				lock = true;
-				if (!gestartet) return;
 				drawingPanel.drawMandelbrotJuliamenge();
 				lock = false;
 			}
@@ -315,7 +301,6 @@ public class Window {
 		textFieldIterationen = new JTextField(drawingPanel.getMaxIterationen() + "");
 		textFieldIterationen.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				if (!gestartet) return;
 				while (lock);
 				lock = true;
 				try {
@@ -337,7 +322,6 @@ public class Window {
 		textFieldParameter = new JTextField(drawingPanel.getParameter() + "");
 		textFieldParameter.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				if (!gestartet) return;
 				while (lock);
 				lock = true;
 				try {
