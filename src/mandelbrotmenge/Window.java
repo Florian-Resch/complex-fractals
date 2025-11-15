@@ -2,6 +2,8 @@ package mandelbrotmenge;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Cursor;
+import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.FlowLayout;
 import java.awt.Graphics;
@@ -34,6 +36,8 @@ import javax.swing.JMenuItem;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 
+import helper.WrapLayout;
+
 public class Window {
 	
 	private JFrame frame;
@@ -50,12 +54,21 @@ public class Window {
 	private JLabel lblParameter;
 	private JTextField textFieldParameter;
 	private JCheckBox chckbxNewCheckBox;
+	private JButton btnSelectPosition;
 	
 	/**
 	 * für Bewegen mit MouseMotionListener
 	 */
 	public static Point startpunkt = null;
+
+	/**
+	 * true, if there is a selection ongoing
+	 */
+	public static boolean selecting = false;
 	
+	/**
+	 * a lock which is set, if some method does any calculations or changes in drawingPanel
+	 */
 	public static boolean lock = false;
 	
 	/**
@@ -90,6 +103,20 @@ public class Window {
 		
 		drawingPanel = new DrawingPanel();
 		drawingPanel.addMouseListener(new MouseAdapter() {
+			public void mouseClicked(MouseEvent e) {
+				if (selecting) {
+					ComplexNumber newParameter = drawingPanel.pointToComplex(e.getPoint());
+					textFieldParameter.setText(newParameter + "");
+					drawingPanel.reset();
+
+					drawingPanel.setParameter(newParameter);
+					drawingPanel.setMandelbrotmenge(false);
+					drawingPanel.drawMandelbrotJuliamenge();
+					unsetSelecting();
+					return;
+				}
+			}
+
 			public void mouseReleased(MouseEvent e) {
 				drawingPanel.requestFocusInWindow();
 				while (lock);
@@ -143,6 +170,7 @@ public class Window {
 		inputMap.put(KeyStroke.getKeyStroke("RIGHT"), "moveRight");
 		inputMap.put(KeyStroke.getKeyStroke("PLUS"), "zoomIn");
 		inputMap.put(KeyStroke.getKeyStroke("MINUS"), "zoomOut");
+		inputMap.put(KeyStroke.getKeyStroke("ESCAPE"), "cancel");
 
 		// Map the action name to actual behavior
 		actionMap.put("moveUp", new AbstractAction() {
@@ -219,9 +247,15 @@ public class Window {
 				lock = false;
 			}
 		});
+		actionMap.put("cancel", new AbstractAction() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				unsetSelecting();
+			}
+		});
 
 		JMenuBar menuBar = new JMenuBar();
-		menuBar.setLayout(new FlowLayout());
+		menuBar.setLayout(new WrapLayout(FlowLayout.LEFT));
 		frame.setJMenuBar(menuBar);
 		
 		JMenu mnSystem = new JMenu("System");
@@ -350,12 +384,35 @@ public class Window {
 		chckbxNewCheckBox.setSelected(true);
 		menuBar.add(chckbxNewCheckBox);
 
-		drawingPanel.addComponentListener(new ComponentAdapter() {
-			public void componentResized(ComponentEvent e) {
-				if (drawingPanel.getWidth() > 0 /* don't trigger on first invokation */ && !lock /* don't trigger to often */)
-				btnNeuladen.doClick();
+		btnSelectPosition = new JButton("Select");
+		btnSelectPosition.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if (!selecting)
+					setSelecting();
+				else
+					unsetSelecting();
 			}
 		});
+		menuBar.add(btnSelectPosition);
+
+		drawingPanel.addComponentListener(new ComponentAdapter() {
+			public void componentResized(ComponentEvent e) {
+				if (drawingPanel.getWidth() > 0 /* don't trigger on first invokation */ && !lock /* don't trigger to often */) {
+					System.out.println(drawingPanel.getSize());
+					btnNeuladen.doClick();
+				}
+			}
+		});
+	}
+
+	private void setSelecting() {
+		selecting = true;
+		drawingPanel.setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
+	}
+
+	private void unsetSelecting() {
+		selecting = false;
+		drawingPanel.setCursor(Cursor.getDefaultCursor());
 	}
 	
 	private BufferedImage bildBerechnen() {
@@ -412,6 +469,5 @@ public class Window {
 			return null;
 		}
 	}
-	
-}
 
+}
