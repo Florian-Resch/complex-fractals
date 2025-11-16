@@ -3,7 +3,6 @@ package mandelbrotmenge;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Cursor;
-import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.FlowLayout;
 import java.awt.Graphics;
@@ -27,12 +26,11 @@ import javax.swing.ActionMap;
 import javax.swing.InputMap;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JMenu;
 import javax.swing.JMenuBar;
-import javax.swing.JMenuItem;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 
@@ -44,6 +42,9 @@ public class Window {
 	
 	private DrawingPanel drawingPanel;
 	
+	private JButton btnBeenden;
+	private JComboBox<FractalType> comboBoxFractalType;
+
 	private JLabel lblSkalierung;
 	private JLabel lblFixpunkt;
 	
@@ -110,7 +111,7 @@ public class Window {
 					drawingPanel.reset();
 
 					drawingPanel.setParameter(newParameter);
-					drawingPanel.setMandelbrotmenge(false);
+					drawingPanel.setFractalType(FractalType.JuliaSet);
 					drawingPanel.drawMandelbrotJuliamenge();
 					unsetSelecting();
 					return;
@@ -257,43 +258,28 @@ public class Window {
 		JMenuBar menuBar = new JMenuBar();
 		menuBar.setLayout(new WrapLayout(FlowLayout.LEFT));
 		frame.setJMenuBar(menuBar);
-		
-		JMenu mnSystem = new JMenu("System");
-		menuBar.add(mnSystem);
-		
-		JMenuItem mntmStartenMandelbrot = new JMenuItem("Starten Mandelbrot");
-		mntmStartenMandelbrot.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				while (lock);
-				lock = true;
-				drawingPanel.reset();
-				drawingPanel.setMandelbrotmenge(true);
-				drawingPanel.drawMandelbrotJuliamenge();
-				lock = false;
-			}
-		});
-		mnSystem.add(mntmStartenMandelbrot);
-		
-		JMenuItem mntmStartenJulia = new JMenuItem("Starten Julia");
-		mntmStartenJulia.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				while (lock);
-				lock = true;
-				drawingPanel.reset();
-				drawingPanel.setMandelbrotmenge(false);
-				drawingPanel.drawMandelbrotJuliamenge();
-				lock = false;
-			}
-		});
-		mnSystem.add(mntmStartenJulia);
-		
-		JMenuItem mntmBeenden = new JMenuItem("Beenden");
-		mntmBeenden.addActionListener(new ActionListener() {
+						
+		btnBeenden = new JButton("Beenden");
+		btnBeenden.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				System.exit(0);
 			}
 		});
-		mnSystem.add(mntmBeenden);
+		menuBar.add(btnBeenden);
+
+		comboBoxFractalType = new JComboBox<>(FractalType.values());
+		comboBoxFractalType.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				while (lock);
+				lock = true;
+				drawingPanel.reset();
+				drawingPanel.setFractalType((FractalType) comboBoxFractalType.getSelectedItem());
+				drawingPanel.drawMandelbrotJuliamenge();
+				lock = false;
+			}
+		});
+		menuBar.add(comboBoxFractalType);
 		
 		lblSkalierung = new JLabel(drawingPanel.getSkalierung() + "   ");
 		menuBar.add(lblSkalierung);

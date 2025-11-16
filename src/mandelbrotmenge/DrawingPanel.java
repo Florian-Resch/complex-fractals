@@ -38,7 +38,7 @@ public class DrawingPanel extends JPanel {
 	/**
 	 * true, wenn die Mandelbrotmenge gezeichnet wird; false, wenn eine Juliamenge gezeichnet wird
 	 */
-	private boolean mandelbrotmenge = true;
+	private FractalType fractalType = FractalType.MandelbrotSet;
 	
 	/**
 	 * der Parameter für das Zeichnen von Juliamengen
@@ -58,14 +58,14 @@ public class DrawingPanel extends JPanel {
 		fixpunkt = new ComplexNumber(-2, 1);
 		skalierung = 1;
 		
-		Graphics gr = getGraphics();
+		/*Graphics gr = getGraphics();
 		for (int i=0; i<getWidth(); i++) {
 			for (int j=0; j<getHeight(); j++) {
 				Color c = intToColor((i+j)%256);
 				gr.setColor(c);
 				gr.drawLine(i, j, i, j);
 			}
-		}
+		}*/
 	}
 	
 	/**
@@ -576,14 +576,13 @@ public class DrawingPanel extends JPanel {
 	 * @return Integer.MAX_VALUE, wenn c in der MB/J-Menge liegt, sonst die Zahl der Iterationen >= 1 bis c divergiert
 	 */
 	private int isInSet(ComplexNumber c) {
-		if (mandelbrotmenge) {
-			ComplexNumber z0 = parameter;
-			
+		switch (fractalType) {
+		case MandelbrotSet: {
 			double x0 = c.getRe();
 			double y0 = c.getIm();
 			
-			double x = z0.getRe();
-			double y = z0.getIm();
+			double x = parameter.getRe();
+			double y = parameter.getIm();
 			double x2 = x*x;
 			double y2 = y*y;
 			for (int i=1; i<=maxIterationen; i++) {
@@ -593,16 +592,15 @@ public class DrawingPanel extends JPanel {
 				x2 = x*x;
 				y2 = y*y;
 				
-				if (x2 + y2 > 400) {
+				if (x2 + y2 > 4) {
 					return i;// - Math.log(Math.log(x2 + y2) / Math.log(4)) / Math.log(2);
 				}
 			}
+			break;
 		}
-		else {// Juliamenge
-			ComplexNumber z0 = parameter;
-			
-			double x0 = z0.getRe();
-			double y0 = z0.getIm();
+		case JuliaSet: {
+			double x0 = parameter.getRe();
+			double y0 = parameter.getIm();
 			
 			double x = c.getRe();
 			double y = c.getIm();
@@ -619,7 +617,52 @@ public class DrawingPanel extends JPanel {
 					return i;// - Math.log(Math.log(x2 + y2) / Math.log(4)) / Math.log(2);
 				}
 			}
+			break;
 		}
+		case BurningShipFractal: {
+			double x0 = c.getRe();
+			double y0 = c.getIm();
+			
+			double x = parameter.getRe();
+			double y = parameter.getIm();
+			double x2 = x*x;
+			double y2 = y*y;
+			for (int i=1; i<=maxIterationen; i++) {
+				iter++;
+				y = Math.abs((x+x)*y) + y0;
+				x = Math.abs(x2 - y2) + x0;
+				x2 = x*x;
+				y2 = y*y;
+				
+				if (x2 + y2 > 4) {
+					return i;// - Math.log(Math.log(x2 + y2) / Math.log(4)) / Math.log(2);
+				}
+			}
+			break;
+		}
+		case Tricorn: {
+			double x0 = c.getRe();
+			double y0 = c.getIm();
+			
+			double x = parameter.getRe();
+			double y = parameter.getIm();
+			double x2 = x*x;
+			double y2 = y*y;
+			for (int i=1; i<=maxIterationen; i++) {
+				iter++;
+				y = -(x+x)*y + y0;
+				x = x2 - y2 + x0;
+				x2 = x*x;
+				y2 = y*y;
+				
+				if (x2 + y2 > 4) {
+					return i;// - Math.log(Math.log(x2 + y2) / Math.log(4)) / Math.log(2);
+				}
+			}
+			break;
+		}
+		}
+
 		return Integer.MAX_VALUE;
 	}
 	
@@ -627,7 +670,8 @@ public class DrawingPanel extends JPanel {
 		ArrayList<ExactComplexNumber> verlauf = new ArrayList<>();
 		BigDecimal four = new BigDecimal(4);
 		
-		if (mandelbrotmenge) {
+		switch (fractalType) {
+		case MandelbrotSet: {
 			ExactComplexNumber z0 = parameter.toExactComplexNumber();
 			
 			MathContext mc = ExactComplexNumber.mc;
@@ -652,7 +696,7 @@ public class DrawingPanel extends JPanel {
 				}
 			}
 		}
-		else {// Juliamenge
+		case JuliaSet: {
 			ExactComplexNumber z0 = parameter.toExactComplexNumber();
 			
 			MathContext mc = ExactComplexNumber.mc;
@@ -676,6 +720,12 @@ public class DrawingPanel extends JPanel {
 					break;
 				}
 			}
+		}		
+		case BurningShipFractal: {
+			break;
+		}
+			default:
+				break;
 		}
 		return verlauf;
 	}
@@ -802,12 +852,12 @@ public class DrawingPanel extends JPanel {
 		this.maxIterationen = iterationen;
 	}
 	
-	public boolean isMandelbrotmenge() {
-		return mandelbrotmenge;
+	public FractalType getFractalType() {
+		return fractalType;
 	}
 	
-	public void setMandelbrotmenge(boolean mandelbrotmenge) {
-		this.mandelbrotmenge = mandelbrotmenge;
+	public void setFractalType(FractalType mandelbrotmenge) {
+		this.fractalType = mandelbrotmenge;
 	}
 	
 	public ComplexNumber getParameter() {
