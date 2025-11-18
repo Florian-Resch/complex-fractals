@@ -33,6 +33,7 @@ import javax.swing.JLabel;
 import javax.swing.JMenuBar;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
+import javax.swing.SwingUtilities;
 
 import helper.WrapLayout;
 
@@ -112,7 +113,7 @@ public class Window {
 
 					drawingPanel.setParameter(newParameter);
 					drawingPanel.setFractalType(FractalType.JuliaSet);
-					drawingPanel.drawMandelbrotJuliamenge();
+					drawingPanel.drawFractal();
 					unsetSelecting();
 					return;
 				}
@@ -136,8 +137,8 @@ public class Window {
 				else {
 					int diffX = (int) (e.getX() - startpunkt.getX());
 					int diffY = (int) (e.getY() - startpunkt.getY());
-					drawingPanel.bewegen(new Point(-diffX, -diffY));
-					lblFixpunkt.setText(drawingPanel.getFixpunkt() + "   ");
+					drawingPanel.move(new Point(-diffX, -diffY));
+					lblFixpunkt.setText(drawingPanel.getFixpoint() + "   ");
 					startpunkt = e.getPoint();
 				}
 				lock = false;
@@ -148,13 +149,13 @@ public class Window {
 				while (lock);
 				lock = true;
 				if (e.getWheelRotation() < 0) {
-					drawingPanel.reinzoomen(e.getPoint());
+					drawingPanel.zoomIn(e.getPoint());
 				}
 				else {
-					drawingPanel.rauszoomen(e.getPoint());
+					drawingPanel.zoomOut(e.getPoint());
 				}
-				lblSkalierung.setText(drawingPanel.getSkalierung() + "   ");
-				lblFixpunkt.setText(drawingPanel.getFixpunkt() + "   ");
+				lblSkalierung.setText(drawingPanel.getScaling() + "   ");
+				lblFixpunkt.setText(drawingPanel.getFixpoint() + "   ");
 				lock = false;
 			}
 		});
@@ -180,8 +181,8 @@ public class Window {
 				while (lock);
 				lock = true;
 				
-				drawingPanel.bewegen(new Point(0, -20));
-				lblFixpunkt.setText(drawingPanel.getFixpunkt() + "   ");
+				drawingPanel.move(new Point(0, -20));
+				lblFixpunkt.setText(drawingPanel.getFixpoint() + "   ");
 				
 				lock = false;
 			}
@@ -192,8 +193,8 @@ public class Window {
 				while (lock);
 				lock = true;
 
-				drawingPanel.bewegen(new Point(0, 20));
-				lblFixpunkt.setText(drawingPanel.getFixpunkt() + "   ");
+				drawingPanel.move(new Point(0, 20));
+				lblFixpunkt.setText(drawingPanel.getFixpoint() + "   ");
 				
 				lock = false;
 			}
@@ -204,8 +205,8 @@ public class Window {
 				while (lock);
 				lock = true;
 				
-				drawingPanel.bewegen(new Point(-20, 0));
-				lblFixpunkt.setText(drawingPanel.getFixpunkt() + "   ");
+				drawingPanel.move(new Point(-20, 0));
+				lblFixpunkt.setText(drawingPanel.getFixpoint() + "   ");
 				
 				lock = false;
 			}
@@ -216,8 +217,8 @@ public class Window {
 				while (lock);
 				lock = true;
 				
-				drawingPanel.bewegen(new Point(20, 0));
-				lblFixpunkt.setText(drawingPanel.getFixpunkt() + "   ");
+				drawingPanel.move(new Point(20, 0));
+				lblFixpunkt.setText(drawingPanel.getFixpoint() + "   ");
 
 				lock = false;
 			}
@@ -228,10 +229,10 @@ public class Window {
 				while (lock);
 				lock = true;
 
-				drawingPanel.reinzoomen(new Point(drawingPanel.getWidth()/2, drawingPanel.getHeight()/2));
+				drawingPanel.zoomIn(new Point(drawingPanel.getWidth()/2, drawingPanel.getHeight()/2));
 
-				lblSkalierung.setText(drawingPanel.getSkalierung() + "   ");
-				lblFixpunkt.setText(drawingPanel.getFixpunkt() + "   ");
+				lblSkalierung.setText(drawingPanel.getScaling() + "   ");
+				lblFixpunkt.setText(drawingPanel.getFixpoint() + "   ");
 				lock = false;
 			}
 		});
@@ -241,10 +242,10 @@ public class Window {
 				while (lock);
 				lock = true;
 				
-				drawingPanel.rauszoomen(new Point(drawingPanel.getWidth()/2, drawingPanel.getHeight()/2));
+				drawingPanel.zoomOut(new Point(drawingPanel.getWidth()/2, drawingPanel.getHeight()/2));
 
-				lblSkalierung.setText(drawingPanel.getSkalierung() + "   ");
-				lblFixpunkt.setText(drawingPanel.getFixpunkt() + "   ");
+				lblSkalierung.setText(drawingPanel.getScaling() + "   ");
+				lblFixpunkt.setText(drawingPanel.getFixpoint() + "   ");
 				lock = false;
 			}
 		});
@@ -275,16 +276,16 @@ public class Window {
 				lock = true;
 				drawingPanel.reset();
 				drawingPanel.setFractalType((FractalType) comboBoxFractalType.getSelectedItem());
-				drawingPanel.drawMandelbrotJuliamenge();
+				drawingPanel.drawFractal();
 				lock = false;
 			}
 		});
 		menuBar.add(comboBoxFractalType);
 		
-		lblSkalierung = new JLabel(drawingPanel.getSkalierung() + "   ");
+		lblSkalierung = new JLabel(drawingPanel.getScaling() + "   ");
 		menuBar.add(lblSkalierung);
 		
-		lblFixpunkt = new JLabel(drawingPanel.getFixpunkt() + "   ");
+		lblFixpunkt = new JLabel(drawingPanel.getFixpoint() + "   ");
 		menuBar.add(lblFixpunkt);
 
 		btnSpeichern = new JButton("Speichern");
@@ -311,7 +312,7 @@ public class Window {
 			public void actionPerformed(ActionEvent e) {
 				while (lock);
 				lock = true;
-				drawingPanel.drawMandelbrotJuliamenge();
+				drawingPanel.drawFractal();
 				lock = false;
 			}
 		});
@@ -320,17 +321,17 @@ public class Window {
 		lblIterationen = new JLabel(" Iterationen ");
 		menuBar.add(lblIterationen);
 
-		textFieldIterationen = new JTextField(drawingPanel.getMaxIterationen() + "");
+		textFieldIterationen = new JTextField(drawingPanel.getMaxInterations() + "");
 		textFieldIterationen.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				while (lock);
 				lock = true;
 				try {
-					drawingPanel.setMaxIterationen(Integer.parseInt(textFieldIterationen.getText()));
-					drawingPanel.drawMandelbrotJuliamenge();
+					drawingPanel.setMaxInterations(Integer.parseInt(textFieldIterationen.getText()));
+					drawingPanel.drawFractal();
 				}
 				catch (NumberFormatException e1) {
-					textFieldIterationen.setText(drawingPanel.getMaxIterationen() + "");
+					textFieldIterationen.setText(drawingPanel.getMaxInterations() + "");
 				}
 				lock = false;
 			}
@@ -347,13 +348,13 @@ public class Window {
 				while (lock);
 				lock = true;
 				try {
-					String[] zahlen = textFieldParameter.getText().split("\\+");// Format: +-1234 + +-5678i
-					ComplexNumber parameter = new ComplexNumber(Double.parseDouble(zahlen[0]), Double.parseDouble(zahlen[1].substring(0, zahlen[1].length()-1)));
+					String[] numbers = textFieldParameter.getText().split("\\+");// Format: +-1234 + +-5678i
+					ComplexNumber parameter = new ComplexNumber(Double.parseDouble(numbers[0]), Double.parseDouble(numbers[1].substring(0, numbers[1].length()-1)));
 					drawingPanel.setParameter(parameter);
-					drawingPanel.drawMandelbrotJuliamenge();
+					drawingPanel.drawFractal();
 				}
 				catch (NumberFormatException | NullPointerException e1) {
-					textFieldIterationen.setText(drawingPanel.getMaxIterationen() + "");
+					textFieldIterationen.setText(drawingPanel.getMaxInterations() + "");
 				}
 				lock = false;
 			}
@@ -383,12 +384,12 @@ public class Window {
 
 		drawingPanel.addComponentListener(new ComponentAdapter() {
 			public void componentResized(ComponentEvent e) {
-				if (drawingPanel.getWidth() > 0 /* don't trigger on first invokation */ && !lock /* don't trigger to often */) {
-					System.out.println(drawingPanel.getSize());
+				if (drawingPanel.getWidth() > 0 && drawingPanel.getHeight() > 0 /* don't trigger on first invokation */ && !lock /* don't trigger to often */) {
 					btnNeuladen.doClick();
 				}
 			}
 		});
+
 	}
 
 	private void setSelecting() {
@@ -403,12 +404,12 @@ public class Window {
 	
 	private BufferedImage bildBerechnen() {
 		BufferedImage image = drawingPanel.toImage();
-		BufferedImage signatur = signaturEinlesen();
+		BufferedImage signature = signaturEinlesen();
 		
 		Graphics gr = image.getGraphics();
-		for (int i=image.getWidth()-signatur.getWidth(), x=0; i<image.getWidth(); i++, x++) {
-			for (int j=image.getHeight()-signatur.getHeight(), y=0; j<image.getHeight(); j++, y++) {
-				Color c = new Color(signatur.getRGB(x, y));
+		for (int i=image.getWidth()-signature.getWidth(), x=0; i<image.getWidth(); i++, x++) {
+			for (int j=image.getHeight()-signature.getHeight(), y=0; j<image.getHeight(); j++, y++) {
+				Color c = new Color(signature.getRGB(x, y));
 				if (!c.equals(Color.WHITE)) {
 					gr.setColor(c);
 					gr.drawLine(i, j, i, j);
@@ -419,28 +420,28 @@ public class Window {
 		return image;
 	}
 	
-	public boolean speichern(BufferedImage bild, boolean debug) {
-		if (bild == null)
+	public boolean speichern(BufferedImage image, boolean debug) {
+		if (image == null)
 			return false;
-		int bildNummer = 1;
+		int imageNumber = 1;
 		File file;
 		if (debug) {
-			file = new File("Bilder/Debug" + bildNummer + ".png");
+			file = new File("Bilder/Debug" + imageNumber + ".png");
 			while (file.exists()) {
-				bildNummer++;
-				file = new File("Bilder/Debug" + bildNummer + ".png");
+				imageNumber++;
+				file = new File("Bilder/Debug" + imageNumber + ".png");
 			}
 		}
 		else {
-			file = new File("Bilder/Bild" + bildNummer + ".png");
+			file = new File("Bilder/Bild" + imageNumber + ".png");
 			while (file.exists()) {
-				bildNummer++;
-				file = new File("Bilder/Bild" + bildNummer + ".png");
+				imageNumber++;
+				file = new File("Bilder/Bild" + imageNumber + ".png");
 			}
 		}
 		
 		try {
-			ImageIO.write(bild, "png", file);
+			ImageIO.write(image, "png", file);
 			return true;
 		} catch (IOException e) {
 			return false;
