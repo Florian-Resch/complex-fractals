@@ -33,7 +33,6 @@ import javax.swing.JLabel;
 import javax.swing.JMenuBar;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
-import javax.swing.SwingUtilities;
 
 import helper.WrapLayout;
 
@@ -57,6 +56,7 @@ public class Window {
 	private JTextField textFieldParameter;
 	private JCheckBox chckbxNewCheckBox;
 	private JButton btnSelectPosition;
+	private JButton btnTest;
 	
 	/**
 	 * für Bewegen mit MouseMotionListener
@@ -242,7 +242,7 @@ public class Window {
 				while (lock);
 				lock = true;
 				
-				drawingPanel.zoomOut(new Point(drawingPanel.getWidth()/2, drawingPanel.getHeight()/2));
+				drawingPanel.zoomOut(new Point(drawingPanel.getWidth()/2, drawingPanel.getHeight()/2), 2);
 
 				lblSkalierung.setText(drawingPanel.getScaling() + "   ");
 				lblFixpunkt.setText(drawingPanel.getFixpoint() + "   ");
@@ -294,7 +294,7 @@ public class Window {
 				Thread t = new Thread(new Runnable() {
 					public void run() {
 						BufferedImage bild = bildBerechnen();
-						if (speichern(bild, false)) {
+						if (speichern(bild, "Bild")) {
 							System.out.println("Speichern erfolgreich");
 						}
 						else {
@@ -382,6 +382,15 @@ public class Window {
 		});
 		menuBar.add(btnSelectPosition);
 
+		btnTest = new JButton("Select");
+		btnTest.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				videoZoom(new ComplexNumber(-0.831367145043347, 0.22917945161416745), 1, 8.871766638236154e-15, 600);
+				createVideo("video.mp4", 20);
+			}
+		});
+		menuBar.add(btnTest);
+
 		drawingPanel.addComponentListener(new ComponentAdapter() {
 			public void componentResized(ComponentEvent e) {
 				if (drawingPanel.getWidth() > 0 && drawingPanel.getHeight() > 0 /* don't trigger on first invokation */ && !lock /* don't trigger to often */) {
@@ -401,7 +410,7 @@ public class Window {
 		selecting = false;
 		drawingPanel.setCursor(Cursor.getDefaultCursor());
 	}
-	
+
 	private BufferedImage bildBerechnen() {
 		BufferedImage image = drawingPanel.toImage();
 		BufferedImage signature = signaturEinlesen();
@@ -419,25 +428,34 @@ public class Window {
 		
 		return image;
 	}
+
+	public void videoZoom(ComplexNumber centerpoint, double startZoom, double endZoom, int frameCount) {
+		drawingPanel.setScaling(startZoom);
+		drawingPanel.setFixpoint(centerpoint);
+		drawingPanel.drawFractal();
+		double zoomDifference = Math.pow(endZoom/startZoom, 1.0/frameCount);
+		drawingPanel.move(new Point(-drawingPanel.getWidth()/2, -drawingPanel.getHeight()/2));
+		for (int i=0; i<frameCount; i++) {
+			drawingPanel.setScaling(startZoom*Math.pow(zoomDifference, i));
+			drawingPanel.setFixpoint(centerpoint);
+			drawingPanel.setFixpoint(drawingPanel.pointToComplex(new Point(-drawingPanel.getWidth()/2, -drawingPanel.getHeight()/2)));
+			//drawingPanel.move(new Point(-drawingPanel.getWidth()/2, -drawingPanel.getHeight()/2));
+			drawingPanel.drawFractal();
+			//drawingPanel.zoomIn(new Point(drawingPanel.getWidth()/2, drawingPanel.getHeight()/2), 1/zoomDifference);
+			drawingPanel.drawFractal();
+			BufferedImage frame = bildBerechnen();
+			speichern(frame, "Video/");
+		}
+	}
 	
-	public boolean speichern(BufferedImage image, boolean debug) {
+	public boolean speichern(BufferedImage image, String naming) {
 		if (image == null)
 			return false;
 		int imageNumber = 1;
-		File file;
-		if (debug) {
-			file = new File("Bilder/Debug" + imageNumber + ".png");
-			while (file.exists()) {
-				imageNumber++;
-				file = new File("Bilder/Debug" + imageNumber + ".png");
-			}
-		}
-		else {
-			file = new File("Bilder/Bild" + imageNumber + ".png");
-			while (file.exists()) {
-				imageNumber++;
-				file = new File("Bilder/Bild" + imageNumber + ".png");
-			}
+		File file = new File("Bilder/" + naming + imageNumber + ".png");
+		while (file.exists()) {
+			imageNumber++;
+			file = new File("Bilder/" + naming + imageNumber + ".png");
 		}
 		
 		try {
@@ -454,6 +472,38 @@ public class Window {
 			return ImageIO.read(file);
 		} catch (IOException e) {
 			return null;
+		}
+	}
+
+	private static void createVideo(String outputFile, int fps) {
+		ProcessBuilder pb = new ProcessBuilder(
+				"ffmpeg",
+				"-framerate", fps + "",                // Input framerate
+				"-i", "Bilder/Video/%d.png",           // Input pattern
+				"-c:v", "libx264",                     // Video codec
+				"-preset", "medium",                   // Encoding speed
+				"-crf", "23",                          // Quality
+				"-y",                                  // Overwrite output
+				"Bilder/" + outputFile
+		);
+		pb.redirectError(ProcessBuilder.Redirect.INHERIT);
+		Process process = null;
+		try {
+			process = pb.start();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	
+		int exitCode = -1;
+		try {
+			exitCode = process.waitFor();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		if (exitCode == 0) {
+				System.out.println("Video created successfully: " + outputFile);
+		} else {
+				System.err.println("FFmpeg failed with exit code: " + exitCode);
 		}
 	}
 

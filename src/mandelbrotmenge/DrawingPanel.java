@@ -3,6 +3,8 @@ package mandelbrotmenge;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Point;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.image.BufferedImage;
 import java.math.BigDecimal;
 import java.math.MathContext;
@@ -23,6 +25,11 @@ public class DrawingPanel extends JPanel {
 	 */
 	private static final long serialVersionUID = -4523863750308369087L;
 	
+	/**
+	 * a buffer which holds every image before it is drawn
+	 */
+	private BufferedImage graphicsBuffer = new BufferedImage(Math.max(1, getWidth()), Math.max(1, getHeight()), BufferedImage.TYPE_INT_RGB);
+
 	/**
 	 * die Zahl, die das Pixel (0,0) bekommt
 	 */
@@ -52,6 +59,20 @@ public class DrawingPanel extends JPanel {
 
 	public DrawingPanel(/*int breite, int hoehe*/) {
 		// setBounds(0, 0, breite, hoehe);
+		addComponentListener(new ComponentAdapter() {
+			public void componentResized(ComponentEvent e) {
+				BufferedImage oldGraphicsBuffer = graphicsBuffer;
+				graphicsBuffer = new BufferedImage(Math.max(1, getWidth()), Math.max(1, getHeight()), BufferedImage.TYPE_INT_RGB);
+				Graphics buffer = graphicsBuffer.getGraphics();
+				buffer.drawImage(oldGraphicsBuffer, 0, 0, null);
+				if (getWidth() > oldGraphicsBuffer.getWidth()) {
+					drawFractalPart(true, -(getWidth()-oldGraphicsBuffer.getWidth()), buffer);
+				}
+				if (getHeight() > oldGraphicsBuffer.getHeight()) {
+					drawFractalPart(false, -(getHeight()-oldGraphicsBuffer.getHeight()), buffer);
+				}
+			}
+		});
 	}
 	
 	public void reset() {
@@ -67,18 +88,58 @@ public class DrawingPanel extends JPanel {
 			}
 		}*/
 	}
+
+	/**
+	 * zooms into the fractal
+	 * @param cursorPos the position of the cursor on the panel
+	 * @param zoomFactor the zoomfactor (must be greater than 1)
+	 */
+	public void zoomIn(Point cursorPos, double zoomFactor) {
+		if (zoomFactor < 1) {
+			throw new IllegalArgumentException();
+		}
+		if (scaling/zoomFactor != 0.0) {
+			Point newFixpoint = new Point((int) (cursorPos.x*(1.0-1.0/zoomFactor)), (int) (cursorPos.y*(1.0-1.0/zoomFactor)));
+			fixpoint = pointToComplex(newFixpoint);
+			scaling /= zoomFactor;
+			
+			drawFractalPart(true, 0, graphicsBuffer.getGraphics());
+			getGraphics().drawImage(graphicsBuffer, 0, 0, null);
+		}
+	}
 	
 	/**
 	 * zoomt näher heran
 	 * @param cursorPos die Position der Maus beim Zoomen
 	 */
 	public void zoomIn(Point cursorPos) {
-		if (scaling/2 != 0.0) {
-			Point newFixpoint = new Point(cursorPos.x/2, cursorPos.y/2);
+		zoomIn(cursorPos, 2);
+	}
+	
+	/**
+	 * zooms out from the fractal
+	 * @param cursorPos the position of the cursor on the panel
+	 * @param zoomFactor the zoomfactor (must be greater than 1)
+	 */
+	public void zoomOut(Point cursorPos, double zoomFactor) {
+		if (zoomFactor < 1) {
+			throw new IllegalArgumentException();
+		}
+		if (scaling*zoomFactor != Double.POSITIVE_INFINITY) {
+			Point newFixpoint = new Point((int) (-cursorPos.x*(zoomFactor-1.0)), (int) (-cursorPos.y*(zoomFactor-1.0)));
 			fixpoint = pointToComplex(newFixpoint);
-			scaling /= 2;
-			
-			drawFractalPart(true, 0);
+			scaling *= zoomFactor;
+
+			BufferedImage tmp = new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_RGB);
+			tmp.getGraphics().drawImage(graphicsBuffer, 0, 0, null);
+			graphicsBuffer.getGraphics().drawImage(tmp, -newFixpoint.x/2, -newFixpoint.y/2, (int) (getWidth()/zoomFactor), (int) (getHeight()/zoomFactor), null);
+
+			drawFractalPart(true, -newFixpoint.x/2+2, graphicsBuffer.getGraphics());
+			drawFractalPart(true, newFixpoint.x/2-2, graphicsBuffer.getGraphics());
+			drawFractalPart(false, -newFixpoint.y/2+2, graphicsBuffer.getGraphics());
+			drawFractalPart(false, newFixpoint.y/2-2, graphicsBuffer.getGraphics());
+
+			getGraphics().drawImage(graphicsBuffer, 0, 0, null);
 		}
 	}
 	
@@ -87,13 +148,7 @@ public class DrawingPanel extends JPanel {
 	 * @param cursorPos die Position der Maus beim Zoomen
 	 */
 	public void zoomOut(Point cursorPos) {
-		if (scaling*2 != Double.POSITIVE_INFINITY) {
-			Point newFixpoint = new Point(-cursorPos.x, -cursorPos.y);
-			fixpoint = pointToComplex(newFixpoint);
-			scaling *= 2;
-			
-			drawFractalPart(true, 0);
-		}
+		zoomOut(cursorPos, 2);
 	}
 	
 	/**
@@ -103,15 +158,17 @@ public class DrawingPanel extends JPanel {
 	public void move(Point offset) {
 		fixpoint = pointToComplex(offset);
 		
-		Graphics gr = getGraphics();
+		Graphics gr = graphicsBuffer.getGraphics();
 		gr.copyArea(0, 0, getWidth(), getHeight(), -offset.x, -offset.y);
 		
 		if (offset.getX() != 0) {
-			drawFractalPart(true, -offset.x);
+			drawFractalPart(true, -offset.x, gr);
 		}
 		if (offset.getY() != 0) {
-			drawFractalPart(false, -offset.y);
+			drawFractalPart(false, -offset.y, gr);
 		}
+
+		getGraphics().drawImage(graphicsBuffer, 0, 0, null);
 	}
 	
 	/**
@@ -121,7 +178,7 @@ public class DrawingPanel extends JPanel {
 	 * @param parameter der Wert von x0; standardmäßig 0
 	 */
 	public void drawFractal() {
-		drawFractalPart(true, 0);
+		drawFractalPart(true, 0, getGraphics());
 	}
 	
 	/**
@@ -129,7 +186,7 @@ public class DrawingPanel extends JPanel {
 	 * @param xDirection true, wenn der zu zeichnende Streifen links oder rechts liegt; false, wenn er oben oder unten liegt
 	 * @param value positiv, wenn der Streifen oben oder links liegt; kann auch 0 sein, dann wir alles gezeichnet
 	 */
-	private void drawFractalPart(boolean xDirection, int value) {
+	private void drawFractalPart(boolean xDirection, int value, Graphics gr) {
 		long time = System.nanoTime();
 		/*if (wert == 0) {
 			deepZoomMandelbrotmenge(new Point(0, 0), getWidth()-1, getHeight()-1, getGraphics());
@@ -139,10 +196,10 @@ public class DrawingPanel extends JPanel {
 			if (scaling < 0.51 && borderTracing) {
 				int width = getWidth();
 				int height = getHeight();
-				bordertracingFractal(new Point(0, 0), new Point(width, height), getGraphics());
+				bordertracingFractal(new Point(0, 0), new Point(width, height), gr);
 			}
 			else {
-				partBordertracingFractal(getGraphics());
+				partBordertracingFractal(gr);
 			}
 		}
 		else {
@@ -167,7 +224,7 @@ public class DrawingPanel extends JPanel {
 					startJ = height+value;
 				}
 			}
-			bordertracingFractal(new Point(startI, startJ), new Point(width, height), getGraphics());
+			bordertracingFractal(new Point(startI, startJ), new Point(width, height), gr);
 		}
 		System.out.println(iter + " iterations: " + (System.nanoTime()-time)/1000000 + " ms");
 		iter = 0;
@@ -782,7 +839,7 @@ public class DrawingPanel extends JPanel {
 					colors[i] = new Color(255-t, 127-t/2, t);
 				}
 			}
-			else {
+			else if (colorPalette == 1) {
 				double t = (double)i/255;
 				// Bernstein-Polynom 4.Grades
 				colors[i] = new Color((int) (9 * (1-t) * t * t * t * 255), 
